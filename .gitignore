@@ -8,3 +8,4 @@ cdk.out/
 *.tgz
 
 !jest.config.js
+model.tar.gz

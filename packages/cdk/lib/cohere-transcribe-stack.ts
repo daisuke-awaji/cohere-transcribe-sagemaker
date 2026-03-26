@@ -1,13 +1,11 @@
 import * as path from "path";
 import * as child_process from "child_process";
+import * as fs from "fs";
 import {
   Stack,
   StackProps,
   CfnOutput,
   Aws,
-  BundlingOutput,
-  DockerImage,
-  ILocalBundling,
 } from "aws-cdk-lib";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as s3assets from "aws-cdk-lib/aws-s3-assets";
@@ -36,28 +34,17 @@ export class CohereTranscribeStack extends Stack {
     const { modelId, instanceType, endpointName, huggingFaceToken } = props;
 
     const inferenceDir = path.join(__dirname, "../../inference");
+    const tarGzPath = path.join(inferenceDir, "model.tar.gz");
 
-    // --- Model Artifact (model.tar.gz) ---
+    // Build model.tar.gz at synth time
+    child_process.execSync(
+      `tar czf ${tarGzPath} -C ${inferenceDir} code/`,
+      { stdio: "inherit" }
+    );
+
+    // --- Model Artifact (model.tar.gz as a single file) ---
     const modelArtifact = new s3assets.Asset(this, "ModelArtifact", {
-      path: inferenceDir,
-      bundling: {
-        local: {
-          tryBundle(outputDir: string): boolean {
-            child_process.execSync(
-              `tar czf ${outputDir}/model.tar.gz -C ${inferenceDir} code/`,
-              { stdio: "inherit" }
-            );
-            return true;
-          },
-        } satisfies ILocalBundling,
-        image: DockerImage.fromRegistry("public.ecr.aws/docker/library/alpine:3.20"),
-        command: [
-          "sh",
-          "-c",
-          "cd /asset-input && tar czf /asset-output/model.tar.gz code/",
-        ],
-        outputType: BundlingOutput.NOT_ARCHIVED,
-      },
+      path: tarGzPath,
     });
 
     // --- IAM Role for SageMaker ---
@@ -94,6 +81,9 @@ export class CohereTranscribeStack extends Stack {
         },
       },
     });
+
+    // Ensure IAM policy is created before SageMaker Model
+    model.node.addDependency(executionRole);
 
     // --- Endpoint Configuration ---
     const endpointConfig = new sagemaker.CfnEndpointConfig(
