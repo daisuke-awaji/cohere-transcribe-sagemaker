@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.js
+*.d.ts
+*.js.map
+cdk.out/
+.cdk.staging/
+*.tgz
+
+!jest.config.js
