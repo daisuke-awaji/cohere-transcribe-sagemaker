@@ -1,0 +1,8 @@
+{
+  "availability-zones:account=988417841316:region=ap-northeast-1": [
+    "ap-northeast-1a",
+    "ap-northeast-1c",
+    "ap-northeast-1d"
+  ],
+  "ami:account=988417841316:filters.image-type.0=machine:filters.name.0=Deep Learning Base OSS Nvidia Driver GPU AMI (Ubuntu 22.04)*:filters.state.0=available:owners.0=amazon:region=ap-northeast-1": "ami-05e75d31e667d7e11"
+}
